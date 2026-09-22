@@ -5,52 +5,63 @@
 # requirement. Provenance lets anyone cryptographically verify that a package
 # was built by this exact workflow, from this exact repository and commit.
 #
-# ─── PREREQUISITES ─────────────────────────────────────────────────────────────
+# --- PREREQUISITES ---------------------------------------------------------
 #
-# @n8n/node-cli ≥ 0.23.0 is required. Earlier versions do not support the
-# provenance flag passed by `npm run release` in CI, and the publish step will
-# fail. Check the version installed in this project with:
+# @n8n/node-cli >= 0.23.0 is required. Earlier versions do not support the
+# provenance flag passed by `npm run release` in CI, and the publish step
+# fails. Check the version installed in this project with:
 #
 #   npm list @n8n/node-cli
 #
-# To upgrade, add @n8n/node-cli@latest as a dev dependency using your package manager.
+# To upgrade, add @n8n/node-cli@latest as a dev dependency.
 #
-# ─── ONE-TIME SETUP ────────────────────────────────────────────────────────────
+# --- ONE-TIME SETUP --------------------------------------------------------
 #
-# Option A — OIDC Trusted Publishing (recommended, no long-lived secrets):
-#   1. Log in to npmjs.com and open your package's settings.
-#   2. Under "Publish access" → "Trusted Publishers", click "Add a publisher".
+# There are two ways to authenticate. Both produce a provenance attestation,
+# because provenance is signed by GitHub's OIDC infrastructure regardless of
+# how npm itself authenticated the request.
+#
+# IMPORTANT: npm does not allow OIDC trusted publishing for a package's very
+# first publish. The npmjs.com UI only shows "Trusted Publishers" once the
+# package exists, so bootstrap with Option B, then switch to Option A.
+# (Tracked upstream at https://github.com/npm/cli/issues/8544)
+#
+# Option B - bootstrap token (required once, for the first publish):
+#   1. On npmjs.com: Access Tokens -> Generate New Token -> Granular Access
+#      Token.
+#   2. Permissions: "Read and write".
+#   3. Packages: select "All packages". You cannot scope the token to this
+#      package because it does not exist on npm yet; this is the reason a
+#      token is needed at all.
+#   4. In GitHub: Settings -> Secrets and variables -> Actions -> New secret.
+#      Name it NPM_TOKEN and paste the token value.
+#   5. Publish. The package now exists, so you can switch to Option A.
+#
+# Option A - OIDC Trusted Publishing (recommended after the first publish):
+#   1. Log in to npmjs.com and open this package's settings.
+#   2. Under "Publish access" -> "Trusted Publishers", click "Add a publisher".
 #   3. Select GitHub Actions and fill in:
-#        Repository owner: <your-github-username-or-org>
-#        Repository name:  <your-repo-name>
+#        Repository owner: kanjizoiie
+#        Repository name:  n8n-nodes-charm-hyper
 #        Workflow name:    publish.yml
 #        Environment:      (leave blank unless you use GitHub Environments)
-#   4. Leave the NPM_TOKEN secret unset in this repository. GitHub's OIDC
-#      token is used instead — no secret ever touches your repo settings.
+#   4. Delete the NPM_TOKEN repository secret. GitHub's OIDC token is used
+#      instead, so no long-lived credential stays in your repo settings.
 #
-# Option B — npm Automation Token (fallback):
-#   1. On npmjs.com: Access Tokens → Generate New Token → Granular Access Token.
-#      Scope it to this package with "Read and write" publish permission.
-#   2. In GitHub: Settings → Secrets and variables → Actions → New secret.
-#      Name it NPM_TOKEN and paste the token value.
-#
-# Both options work with --provenance. Provenance is signed by GitHub's OIDC
-# infrastructure regardless of how npm authentication is handled.
-#
-# ─── TAG CONVENTION ────────────────────────────────────────────────────────────
+# --- TAG CONVENTION --------------------------------------------------------
 #
 # This workflow triggers on tags matching "*.*.*" (e.g. 0.2.0).
 # If you prefer tags with a "v" prefix (e.g. v0.2.0), change the filter to:
 #   tags: ['v*.*.*']
 #
-# ─── RELEASE PROCESS ───────────────────────────────────────────────────────────
+# --- RELEASE PROCESS -------------------------------------------------------
 #
 # Run the following command locally to start an interactive release:
 #
 #   npm run release
 #
 # This will lint, build, prompt for a version bump, update the changelog,
-# commit, tag, and push — which triggers this workflow to publish to npm.
+# commit, tag, and push - which triggers this workflow to publish to npm.
 
 name: Publish
 
@@ -73,27 +84,39 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      # Actions are pinned to commit SHAs rather than mutable tags so the
+      # publish path cannot be altered by a retagged or compromised release.
+      #
+      # actions/checkout v4.4.0
+      # persist-credentials is disabled so the job's GITHUB_TOKEN is not left
+      # behind in .git/config. The release step only publishes; it never pushes.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        # actions/setup-node v7.0.0
+        # package-manager-cache is disabled so no previously cached dependency
+        # state can influence the artifact we publish to npm. Note this input
+        # requires setup-node v6+ (v4 only has `cache`).
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 'lts/*'
-          cache: 'npm'
+          package-manager-cache: false
 
       - name: Install dependencies
         run: 'npm ci'
 
       - name: Release
-        # Publishes to npm with a provenance attestation (requires id-token: write above).
-        # Lint and build run automatically as part of the release process.
+        # Publishes to npm with a provenance attestation (needs id-token:
+        # write above). Lint and build run as part of the release process.
         #
-        # Option A (OIDC): leave NPM_TOKEN unset — the token step is skipped and
-        #   npm uses the OIDC exchange instead.
-        # Option B (token): set NPM_TOKEN in repo secrets — it is written to
-        #   .npmrc here before publishing.
+        # If NPM_TOKEN is unset, the config line is skipped and npm uses the
+        # OIDC exchange instead.
         run: |
-          [ -n "$NPM_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          fi
           npm run release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
