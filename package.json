@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"description": "n8n nodes for the Charm Hyper inference API (OpenAI- and Anthropic-compatible).",
 	"license": "MIT",
-	"homepage": "https://github.com/marcus-p/n8n-nodes-charm-hyper",
+	"homepage": "https://github.com/kanjizoiie/n8n-nodes-charm-hyper",
 	"keywords": [
 		"n8n-community-node-package",
 		"n8n",
@@ -15,12 +15,13 @@
 		"anthropic"
 	],
 	"author": {
-		"name": "Marcus",
-		"email": "marcus@example.com"
+		"name": "Marcus Johansson",
+		"email": "4198496+kanjizoiie@users.noreply.github.com",
+		"url": "https://github.com/kanjizoiie"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/marcus-p/n8n-nodes-charm-hyper.git"
+		"url": "https://github.com/kanjizoiie/n8n-nodes-charm-hyper.git"
 	},
 	"scripts": {
 		"build": "n8n-node build",
