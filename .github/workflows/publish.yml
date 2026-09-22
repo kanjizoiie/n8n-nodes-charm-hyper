@@ -30,12 +30,31 @@
 #   1. On npmjs.com: Access Tokens -> Generate New Token -> Granular Access
 #      Token.
 #   2. Permissions: "Read and write".
-#   3. Packages: select "All packages". You cannot scope the token to this
+#   3. Under "Packages and scopes" select "Read and write (publish and stage)".
+#      Do NOT pick "stage only": a stage-only token returns E_STAGE_REQUIRED
+#      on direct publish and would need a manual 2FA promotion instead.
+#   4. Turn ON "Bypass two-factor authentication". This is not optional and it
+#      is the step that is easiest to miss. It defaults to OFF, and a token
+#      without it fails the publish with:
+#
+#        403 Forbidden - PUT https://registry.npmjs.org/<pkg> -
+#        Two-factor authentication or granular access token with bypass 2fa
+#        enabled is required to publish packages.
+#
+#      A bypass-2FA token takes precedence over account- and package-level 2FA
+#      settings, so it works whether or not the account has 2FA turned on.
+#   5. Packages: select "All packages". You cannot scope the token to this
 #      package because it does not exist on npm yet; this is the reason a
-#      token is needed at all.
-#   4. In GitHub: Settings -> Secrets and variables -> Actions -> New secret.
+#      token is needed at all. Give it a short expiry (e.g. 7 days) - it only
+#      has to survive the first publish.
+#   6. In GitHub: Settings -> Secrets and variables -> Actions -> New secret.
 #      Name it NPM_TOKEN and paste the token value.
-#   5. Publish. The package now exists, so you can switch to Option A.
+#   7. Publish. The package now exists, so you can switch to Option A.
+#
+# Note: npm has announced that bypass-2FA tokens lose direct publish in
+# January 2027, after which they can only stage a publish for a maintainer to
+# approve. Treat Option B strictly as a bootstrap:
+#   https://gh.io/npm-gat-bypass2fa-deprecation
 #
 # Option A - OIDC Trusted Publishing (recommended after the first publish):
 #   1. Log in to npmjs.com and open this package's settings.
