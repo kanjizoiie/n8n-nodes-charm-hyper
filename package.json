@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-charm-hyper",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "n8n nodes for the Charm Hyper inference API (OpenAI- and Anthropic-compatible).",
 	"license": "MIT",
 	"homepage": "https://github.com/kanjizoiie/n8n-nodes-charm-hyper",
