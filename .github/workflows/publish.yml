@@ -120,3 +120,9 @@ jobs:
           npm run release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # npm refuses to generate a provenance attestation unless the publish
+          # access is explicitly public, because it cannot infer publicness for
+          # a package that does not exist on the registry yet. This is also set
+          # in package.json (publishConfig.access); both are kept so neither a
+          # config edit nor an env change can silently drop provenance.
+          NPM_CONFIG_ACCESS: public
