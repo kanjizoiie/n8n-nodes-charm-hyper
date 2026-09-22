@@ -21,7 +21,7 @@ import {
 	modelDescription,
 	responseDescription,
 } from './descriptions';
-import { getModels } from './GenericFunctions';
+import { getModels } from '../shared/GenericFunctions';
 
 async function runResource(
 	this: IExecuteFunctions,

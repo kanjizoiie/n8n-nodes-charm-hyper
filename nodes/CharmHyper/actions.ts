@@ -6,7 +6,7 @@ import {
 	parseJsonField,
 	parseStopSequences,
 	setIfDefined,
-} from './GenericFunctions';
+} from '../shared/GenericFunctions';
 
 interface CommonOptions {
 	additionalBody?: string | IDataObject;

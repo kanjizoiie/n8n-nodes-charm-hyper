@@ -2,7 +2,7 @@
 
 An [n8n](https://n8n.io/) community node package for **[Charm Hyper](https://hyper.charm.land)**, the fast, cost-effective inference API for agentic coding.
 
-Hyper speaks both OpenAI and Anthropic wire formats, so this package exposes all three inference surfaces plus account endpoints behind a single credential.
+Hyper speaks both OpenAI and Anthropic wire formats, so this package exposes all three inference surfaces plus account endpoints behind a single credential, and ships a chat model sub-node for use with n8n's AI Agent.
 
 ## Install
 
@@ -89,9 +89,18 @@ Read a reply with an expression such as:
 {{ $json.choices[0].message.content }}
 ```
 
+## Using it as a language model
+
+The package also ships **Charm Hyper Chat Model**, a language model sub-node. Attach one to the **Model** input of an AI Agent (or any chain that accepts a language model) to run that agent on Hyper. Pick a **Model**; sampling and request options live under **Options**.
+
+Because Hyper speaks the OpenAI wire format, the sub-node delegates to n8n's own OpenAI client. Streaming, tool calling and structured output therefore behave exactly as they do with the built-in OpenAI model. Two things worth knowing:
+
+- **Use Responses API** switches calls to `/v1/responses`. Some reasoning models require it. While it is on, pass `max_completion_tokens` through **Additional Body Parameters** instead of using **Max Output Tokens**, which maps to `max_tokens` on the chat completions API.
+- The **Model** dropdown is populated from the public `/v1/models` endpoint, so the credential is only exercised when the model actually runs. You can also type a model ID with an expression.
+
 ## Using it as a tool
 
-The node sets `usableAsTool`, so it can be attached directly to an n8n AI Agent as a callable tool.
+The main node sets `usableAsTool`, so it can be attached directly to an n8n AI Agent as a callable tool.
 
 ## Development
 
@@ -106,14 +115,17 @@ npm run lint:fix
 Source layout:
 
 ```text
-credentials/CharmHyperApi.credentials.ts   # API key + base URL, Bearer auth, /credits test
+credentials/CharmHyperApi.credentials.ts        # API key + base URL, Bearer auth, /credits test
 nodes/CharmHyper/
-  CharmHyper.node.ts                       # node definition + execute loop
-  descriptions.ts                          # resource/operation parameter definitions
-  actions.ts                               # per-operation request building
-  GenericFunctions.ts                      # HTTP transport, model loadOptions, helpers
-  CharmHyper.node.json                     # n8n codex metadata
-icons/                                     # light + dark node icons
+  CharmHyper.node.ts                            # node definition + execute loop
+  descriptions.ts                               # resource/operation parameter definitions
+  actions.ts                                    # per-operation request building
+  CharmHyper.node.json                          # n8n codex metadata
+nodes/CharmHyperChatModel/
+  CharmHyperChatModel.node.ts                   # language model sub-node (supplyData)
+  CharmHyperChatModel.node.json                 # n8n codex metadata
+nodes/shared/GenericFunctions.ts                # HTTP transport, model loadOptions, helpers
+icons/                                          # light + dark node icons
 ```
 
 ## Links
